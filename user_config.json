@@ -1,0 +1,15 @@
+{
+    "config_version": "0.0.1",
+    "account_statement": {
+        "path": "docs/example/",
+        "file": "example_account_statement.htm"
+    },
+    "database": {
+        "path": "docs/example/",
+        "file": "example_import.db"
+    },
+    "csv": {
+        "path": "docs/example/",
+        "file": "example_import.csv"
+    }
+}
