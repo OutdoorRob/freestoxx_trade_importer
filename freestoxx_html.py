@@ -9,7 +9,6 @@ import trading
 
 # imports all transactions from a Freestoxx HTML account statement
 def import_transactions(html_file):
-
     transactions = []
 
     # transaction_table = html.fromstring(html_data).xpath('//div[@class="transactionsTable"]/table')
@@ -22,11 +21,11 @@ def import_transactions(html_file):
     # writes each data record to the database
     for data_record in transaction_table[0].xpath('.//tbody/tr'):
         transaction = data_record.xpath('.//td/text()')
-        transactions.append(trading.Transaction(transaction[headers.index('Symbol')], transaction[headers.index('Direction')],
+        transactions.append(trading.Transaction(transaction[headers.index('Transaction ID')], datetime_convert(transaction[headers.index('Transaction Time')]),
+                                                transaction[headers.index('Symbol')], transaction[headers.index('Direction')],
                                                 transaction[headers.index('Size')], transaction[headers.index('Price')],
-                                                datetime_convert(transaction[headers.index('Transaction Time')]),
-                                                transaction[headers.index('Transaction ID')], transaction[headers.index('Order ID')]))
-
+                                                transaction[headers.index('Order ID')], transaction[headers.index('Commissions and Fees')]))
+    transactions.reverse()
     return transactions
 
 

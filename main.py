@@ -1,6 +1,5 @@
 # coding: utf-8
-
-import sqlite3
+ 
 import sys
 
 import user_config
@@ -11,8 +10,7 @@ import export_csv
 
 
 def main():
-    print("Freestoxx trade importer version 0.0.1\n")
-    print("starting import...\n")
+    print("Freestoxx trade importer version 0.2.0\n")
 
     if len(sys.argv) > 1:
         user_config_file = sys.argv[1]
@@ -21,9 +19,19 @@ def main():
 
     user_cfg = user_config.user_config(user_config_file)
 
+    # import transactions from HTML and ...
+    print("reading account statement...\n")
     transactions = freestoxx_html.import_transactions(user_cfg.account_statement_path)
-    transactions.reverse()
+    # write new ones to database
+    # todo: Warnung wenn keine doppelte TransactionId gefunden wurde (=> mögliche Lücke in Kontoauszug)
+    print("importing transactions...\n")
+    export_sqlite.write_transactions(user_cfg.database_path, transactions)
 
+    # read transactions that aren't matched to a trade (= newly imported ones)
+    transactions = export_sqlite.read_unmatched_transactions(user_cfg.database_path)
+
+    # 'build' trades
+    # there can be only one open trade for each symbol
     open_trades = []
     closed_trades = []
 
@@ -36,21 +44,18 @@ def main():
                 closed_trades.append(open_trade[0])
                 open_trades.remove(open_trade[0])
 
-
-    # write closed trades to database
-    db_conn = sqlite3.connect(user_cfg.database_path)
-    db_cursor = db_conn.cursor()
-
-    export_sqlite.trades_to_database(db_cursor, closed_trades)
-    export_sqlite.trades_to_database(db_cursor, open_trades)
+    # write trades to database
+    print("\nimporting trades...\n")
+    export_sqlite.write_trades(user_cfg.database_path, closed_trades)
+    export_sqlite.write_trades(user_cfg.database_path, open_trades)
+    
+    # update transactions in database
+    export_sqlite.update_transactions(user_cfg.database_path, transactions)
 
     # convert database to csv
-    export_csv.write_to_csv(user_cfg.csv_path, export_sqlite.read_trades_with_headers(db_cursor))
+    export_csv.write_to_csv(user_cfg.csv_path, export_sqlite.read_all_trades_with_headers(user_cfg.database_path))
 
-    db_conn.commit()
-    db_conn.close()
-
-    print("\nimport done\n")
+    print("import done :-) \n")
 
 
 if __name__ == "__main__":
